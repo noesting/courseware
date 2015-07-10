@@ -6,7 +6,8 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
             'click button[name=reset-exercise]': function (event) {
                 var $form = this.$(event.target).closest('form'),
                     view = this,
-                    $exercise_index = $form.find("input[name='exercise_index']").val();
+                    $exercise_index = $form.find("input[name='exercise_index']").val(),
+                    $block = this.$el.parent();
 
                 if (confirm('Soll die Antwort zurückgesetzt werden?')) {
                     helper.callHandler(this.model.id, 'exercise_reset', $form.serialize())
@@ -19,8 +20,8 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
                             }
                         )
                         .then(function () {
-                            view.$('.exercise').hide();
-                            view.$('#exercise' + $exercise_index).show();
+                            $block.find('.exercise').hide();
+                            $block.find('#exercise' + $exercise_index).show();
                         })
                         .done();
                 }
@@ -31,7 +32,8 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
             'click button[name=submit-exercise]': function (event) {
                 var $form = this.$(event.target).closest('form'),
                     view = this,
-                    $exercise_index = $form.find("input[name='exercise_index']").val();
+                    $exercise_index = $form.find("input[name='exercise_index']").val(),
+                    $block = this.$el.parent();
 
                 helper.callHandler(this.model.id, 'exercise_submit', $form.serialize())
                     .then(
@@ -68,10 +70,11 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
                 if ($num < 1) {
                     $num = parseInt(options.numexes, 10);
                 }
+                var $block = this.$el.parent();
 
                 // FIXME
-                $('.exercise').hide();
-                $('#exercise'+$num).show();
+                $block.find('.exercise').hide();
+                $block.find('#exercise'+$num).show();
             }
         },
 
@@ -109,14 +112,18 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
 
                 $sortableAnswers.sortable({
                     axis: 'y',
-                    cursor: 'move',
-                    forcePlaceholderSize: true,
-                    change: function () {
-                        fixAnswersHeight($sortableAnswers.find('li'), $sortableLabels.find('li'));
-                    },
+                    containment: $sortableAnswers,
+                    tolerance: 'pointer',
                     update: function () {
                         view.moveChoice($sortableAnswers);
                         fixAnswersHeight($sortableAnswers.find('li'), $sortableLabels.find('li'));
+                    },
+                    sort: function (event, ui) {
+                        // this workaround is needed, otherwise, sortable items
+                        // would jump when the user scrolled down before sorting
+                        ui.helper.css({
+                            top : ui.position.top + $(window).scrollTop() + 'px'
+                        });
                     }
                 });
             });

@@ -58,6 +58,11 @@ class TestBlock extends Block
     public function student_view()
     {
         $active = VipsBridge::vipsActivated($this);
+        $typeOfThisTest = $this->test->type;
+        $typeOfThisTestBlock = $this->_model->sub_type;
+     
+        if ($typeOfThisTest == null) return array('active' => $active, 'exercises' => false, 'typemismatch' => false);
+        if ($typeOfThisTest !== $typeOfThisTestBlock) return array('active' => $active, 'exercises' => false, 'typemismatch' => true);
         return $active ? array_merge(compact('active'), $this->buildExercises()) : compact('active');
     }
 
@@ -201,8 +206,7 @@ class TestBlock extends Block
         parse_str($data, $requestParams);
 
         foreach ($requestParams as $key => $value) {
-            // TODO: Why don't we use $data directly?
-            $_POST[$key] = studip_utf8decode($value);
+            $_POST[$key] = $value;
         }
 
         $vipsPlugin = VipsBridge::getVipsPlugin();
@@ -564,11 +568,17 @@ class TestBlock extends Block
 
                 $answers = $exercise->getAnswers($this->test, $user);
                 $userAnswers = $exercise->getUserAnswers($this->test, $user);
-
-                // TT: determine if a correct solution has been handed in
-                $solution = $exercise->getSolutionFor($this->test, $user);
-                $correct = $solution ? ($exercise->getPoints() == $solution->points) : false;
-
+                
+                
+                if ($this->_model->sub_type == 'selftest') {
+                    // TT: determine if a correct solution has been handed in
+                    $solution = $exercise->getSolutionFor($this->test, $user);
+                    $correct = $solution ? ($exercise->getPoints() == $solution->points) : false;
+                    $tryagain = $solution && !$correct;
+                }
+                else {
+                    $correct =  false; $tryagain = false;
+                }
                 $entry = array(
                     'exercise_type' => $exercise->getType(),
                     $exercise->getType() => 1,
@@ -593,7 +603,7 @@ class TestBlock extends Block
                     $exercise->getAnswersStrategy()->getTemplate() => true,
                     'user_answers' => $userAnswers,
                     'correct' => $correct,
-                    'tryagain' => $solution && !$correct,
+                    'tryagain' => $tryagain
                 );
                 $entry['skip_entry'] = !$entry['show_solution'] && !$entry['solving_allowed'];
                 $exercises[] = $entry;
