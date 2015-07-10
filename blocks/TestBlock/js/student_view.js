@@ -45,8 +45,8 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
                         }
                     )
                     .then(function () {
-                        view.$('.exercise').hide();
-                        view.$('#exercise' + $exercise_index).show();
+                        $block.find('.exercise').hide();
+                        $block.find('#exercise' + $exercise_index).show();
                     })
                     .done();
 
@@ -55,7 +55,8 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
 
             'click button[name=exercisenav]': function (event){
                 var options = $.parseJSON(this.$(event.target).attr('button-data')),
-                    $num = parseInt(options.id);
+                    $num = parseInt(options.id),
+                    $block = this.$el.parent();
 
                 if (options.direction == 'next') {
                     $num++;
@@ -70,9 +71,7 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
                 if ($num < 1) {
                     $num = parseInt(options.numexes, 10);
                 }
-                var $block = this.$el.parent();
 
-                // FIXME
                 $block.find('.exercise').hide();
                 $block.find('#exercise'+$num).show();
             }
@@ -112,18 +111,14 @@ define(['assets/js/student_view', 'assets/js/url'], function (StudentView, helpe
 
                 $sortableAnswers.sortable({
                     axis: 'y',
-                    containment: $sortableAnswers,
-                    tolerance: 'pointer',
+                    cursor: 'move',
+                    forcePlaceholderSize: true,
+                    change: function () {
+                        fixAnswersHeight($sortableAnswers.find('li'), $sortableLabels.find('li'));
+                    },
                     update: function () {
                         view.moveChoice($sortableAnswers);
                         fixAnswersHeight($sortableAnswers.find('li'), $sortableLabels.find('li'));
-                    },
-                    sort: function (event, ui) {
-                        // this workaround is needed, otherwise, sortable items
-                        // would jump when the user scrolled down before sorting
-                        ui.helper.css({
-                            top : ui.position.top + $(window).scrollTop() + 'px'
-                        });
                     }
                 });
             });

@@ -60,10 +60,11 @@ class TestBlock extends Block
         $active = VipsBridge::vipsActivated($this);
         $typeOfThisTest = $this->test->type;
         $typeOfThisTestBlock = $this->_model->sub_type;
-     
-        if ($typeOfThisTest == null) return array('active' => $active, 'exercises' => false, 'typemismatch' => false);
-        if ($typeOfThisTest !== $typeOfThisTestBlock) return array('active' => $active, 'exercises' => false, 'typemismatch' => true);
-        return $active ? array_merge(compact('active'), $this->buildExercises()) : compact('active');
+        $blockId = $this->_model->id;
+        
+        if ($typeOfThisTest == null) {return array('active' => $active, 'exercises' => false, 'typemismatch' => false);}
+        if ($typeOfThisTest !== $typeOfThisTestBlock) {return array('active' => $active, 'exercises' => false, 'typemismatch' => true);}
+        return $active ? array_merge(array('active' => $active, 'blockid' => $blockId), $this->buildExercises()) : compact('active');
     }
 
     public function author_view()
@@ -206,7 +207,8 @@ class TestBlock extends Block
         parse_str($data, $requestParams);
 
         foreach ($requestParams as $key => $value) {
-            $_POST[$key] = $value;
+            // TODO: Why don't we use $data directly?
+            $_POST[$key] = studip_utf8decode($value);
         }
 
         $vipsPlugin = VipsBridge::getVipsPlugin();
@@ -569,7 +571,6 @@ class TestBlock extends Block
                 $answers = $exercise->getAnswers($this->test, $user);
                 $userAnswers = $exercise->getUserAnswers($this->test, $user);
                 
-                
                 if ($this->_model->sub_type == 'selftest') {
                     // TT: determine if a correct solution has been handed in
                     $solution = $exercise->getSolutionFor($this->test, $user);
@@ -577,8 +578,10 @@ class TestBlock extends Block
                     $tryagain = $solution && !$correct;
                 }
                 else {
-                    $correct =  false; $tryagain = false;
+                    $correct =  false; 
+                    $tryagain = false;
                 }
+
                 $entry = array(
                     'exercise_type' => $exercise->getType(),
                     $exercise->getType() => 1,
